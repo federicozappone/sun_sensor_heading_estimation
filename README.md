@@ -21,7 +21,7 @@ Acquire frames of the chessboard using the ```grab_calibration_frames.py``` util
 
 Finally, run ```calibrate_camera.py```, if everything goes well you should have a ```calibration.npz``` file inside the ```calibration_data``` folder.
 
-You can now run the sun sensor script:
+You can now run the sun sensor script (before doing that set your correct location (lat, lon) inside the script):
 
 ```
 python sun_sensor.py
@@ -31,6 +31,7 @@ python sun_sensor.py
 
 This program has been tested using a Raspberry PI 4 and a camera module with fisheye lens.
 We use the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
+The system could be augmented with a GPS sensor to acquire the current location in real time.
 
 ## Creators
 
