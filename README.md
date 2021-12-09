@@ -30,7 +30,9 @@ python sun_sensor.py
 ## Notes
 
 This program has been tested using a Raspberry PI 4 and a camera module with fisheye lens.
+
 We use the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
+
 The system could be augmented with a GPS sensor to acquire the current location in real time.
 
 ## Creators
