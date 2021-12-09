@@ -5,6 +5,7 @@ import math
 import cv2
 
 from scipy.spatial.transform import Rotation
+from image_utils import image_resize
 
 
 def spherical_to_cartesian(r, elevation, azimuth):
@@ -88,15 +89,48 @@ def rotation_matrix_from_vectors(vec1, vec2):
     return rotation_matrix
 
 
-def detect_sun_position(image):
-    # to be defined
-    return 300, 200
+# preliminary detection method, still not properly tested
+def detect_sun_position(frame, camera_matrix, dist_coefs):
+    h, w = frame.shape[:2]
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_coefs, (w, h), 1, (w, h))
+
+    dst = cv2.undistort(frame, camera_matrix, dist_coefs, None, newcameramtx)
+
+    # crop the frame
+    x, y, w, h = roi
+    dst = dst[y:y + h, x:x + w]
+
+    gray = cv2.cvtColor(frame.copy(), cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (41, 41), 0)
+
+    (min_val, max_val, min_loc, max_loc) = cv2.minMaxLoc(gray)
+
+    return max_loc
 
 
 if __name__ == "__main__":
-    location = (41.4622884, 12.8663671) # latina, italy
+
+    # acquire frames from the system camera with id 0
+    cap = cv2.VideoCapture(0)
+
+    location = (41.4622884, 12.8663671) # lat, lon
+
+    try:
+        with np.load("calibration_data/calibration.npz") as X:
+            camera_matrix, dist_coefs, rvecs, tvecs, w, h, pattern_size, rms = [X[i] for i in ("camera_matrix", "dist_coefs", "rvecs", 
+                                                                               "tvecs", "w", "h", "pattern_size", "rms")]
+    except FileNotFoundError:
+        print("couldn't find calibration data")
+        exit(0)
+
 
     while True:
+        ret, frame = cap.read()
+
+        if ret is False or frame is None:
+            print("could not acquire frame")
+            continue
+
         dt = datetime.datetime.now()
 
         offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
@@ -124,25 +158,17 @@ if __name__ == "__main__":
         print("y:", y)
         print("z:", z)
 
-        w = 640
-        h = 480
-
-        image = np.zeros((h, w, 3), dtype=np.uint8)
-
-        # this needs to be correctly estimated 
-        # using camera calibration
-        px = w / 2
-        py = h / 2
-        fx = 50
-        fy = 50
+        debug_image = np.zeros((h, w, 3), dtype=np.uint8)
 
         I = np.eye(3)
         t = np.zeros(3)
         R = Rotation.from_euler("y", 90, degrees=True)
 
         translation_2d = I
-        camera_matrix = np.matrix([[fx, 0, px], [0, fy, py], [0, 0, 1]])
         shear_2d = I
+
+        print("\ncamera matrix")
+        print(camera_matrix)
 
         translation_3d = np.c_[I, t]
         rotation_3d = np.c_[np.r_[R.as_matrix(), [np.zeros(3)]], [0, 0, 0, 1]]
@@ -156,26 +182,34 @@ if __name__ == "__main__":
 
         # assuming undistorted camera
         p = translation_2d @ camera_matrix @ shear_2d @ translation_3d @ rotation_3d @ P
-        p /= p[0, 2]
 
         print("\nprojected sun position in image plane:", p)
 
-        u_est = int(p[0, 0])
-        v_est = int(p[0, 1])
+        p /= p[2]
 
+        print("\nprojected sun position in image plane (normalized):", p)
+
+        u_est = int(p[0])
+        v_est = int(p[1])
+
+        """
         if u_est > w or v_est > h:
-            print("sun projection outside of image place")
+            print("sun projection outside of image plane")
             continue
+        """
 
-        u_real, v_real = detect_sun_position(image)
+        u_real, v_real = detect_sun_position(frame, camera_matrix, dist_coefs)
 
-        # plot estimated sun position
-        cv2.circle(image, (u_est, v_est), 4, (255, 255, 255), -1)
-        cv2.line(image, (w // 2, h // 2), (u_est, v_est), (255, 255, 255), 1)
+        # plot estimated sun position on debug image
+        cv2.circle(debug_image, (u_est, v_est), 4, (255, 255, 255), -1)
+        cv2.line(debug_image, (w // 2, h // 2), (u_est, v_est), (255, 255, 255), 1)
 
-        # plot detected sun position
-        cv2.circle(image, (u_real, v_real), 4, (0, 255, 0), -1)
-        cv2.line(image, (w // 2, h // 2), (u_real, v_real), (0, 255, 0), 1)
+        # plot detected sun position on debug image
+        cv2.circle(debug_image, (u_real, v_real), 4, (0, 255, 0), -1)
+        cv2.line(debug_image, (w // 2, h // 2), (u_real, v_real), (0, 255, 0), 1)
+
+        # plot detected sun position on the camera frame
+        cv2.circle(frame, (u_real, v_real), 8, (255, 0, 0), 1)
 
         # compute rotation matrix from one vector to another
         rot = rotation_matrix_from_vectors([u_est, v_est, 0], [u_real, v_real, 0])
@@ -192,5 +226,7 @@ if __name__ == "__main__":
 
         print("\ncamera heading (deg):", camera_heading)
 
-        cv2.imshow("image", image)
+
+        cv2.imshow("camera frame", frame)
+        cv2.imshow("debug image", debug_image)
         cv2.waitKey(500)
