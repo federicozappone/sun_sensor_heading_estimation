@@ -1,6 +1,7 @@
 ## Table of contents
 
 - [Quick start](#quick-start)
+- [Notes](#notes)
 - [Creators](#creators)
 - [Copyright and license](#copyright-and-license)
 
@@ -12,14 +13,24 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
-Calibrate your camera with any standard procedure and modify the ```sun_sensor.py``` script with the correct values of ```px, py, fx, fy```
+Camera calibration:
 
-Run the script:
+Print the pattern ```calibration_target/chessboard.png``` on an A4 paper sheet.
+
+Acquire frames of the chessboard using the ```grab_calibration_frames.py``` utility.
+
+Finally, run ```calibrate_camera.py```, if everything goes well you should have a ```calibration.npz``` file inside the ```calibration_data``` folder.
+
+You can now run the sun sensor script:
 
 ```
 python sun_sensor.py
 ```
 
+## Notes
+
+This program has been tested using a Raspberry PI 4 and a camera module with fisheye lens.
+We use the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
 
 ## Creators
 
