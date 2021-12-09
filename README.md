@@ -33,6 +33,8 @@ This program has been tested using a Raspberry PI 4 and a camera module with fis
 
 We use the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
 
+We assume a "static" camera looking upward, if you wish to use this in a real world application (e.g. a rover) you need to update the camera rotation matrix for every frame.
+
 The system could be augmented with a GPS sensor to acquire the current location in real time.
 
 ## Creators
