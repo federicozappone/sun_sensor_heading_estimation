@@ -192,11 +192,11 @@ if __name__ == "__main__":
         u_est = int(p[0])
         v_est = int(p[1])
 
-        """
+
         if u_est > w or v_est > h:
             print("sun projection outside of image plane")
             continue
-        """
+
 
         u_real, v_real = detect_sun_position(frame, camera_matrix, dist_coefs)
 
