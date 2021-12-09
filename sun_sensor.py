@@ -117,8 +117,9 @@ if __name__ == "__main__":
 
     try:
         with np.load("calibration_data/calibration.npz") as X:
-            camera_matrix, dist_coefs, rvecs, tvecs, w, h, pattern_size, rms = [X[i] for i in ("camera_matrix", "dist_coefs", "rvecs", 
-                                                                               "tvecs", "w", "h", "pattern_size", "rms")]
+            camera_matrix, dist_coefs, \
+            rvecs, tvecs, w, h, pattern_size, rms = [X[i] for i in ("camera_matrix", "dist_coefs", "rvecs", 
+                                                                    "tvecs", "w", "h", "pattern_size", "rms")]
     except FileNotFoundError:
         print("couldn't find calibration data")
         exit(0)
@@ -162,10 +163,7 @@ if __name__ == "__main__":
 
         I = np.eye(3)
         t = np.zeros(3)
-        R = Rotation.from_euler("y", 90, degrees=True)
-
-        translation_2d = I
-        shear_2d = I
+        R = Rotation.from_euler("y", 90, degrees=True) # camera pointing up
 
         print("\ncamera matrix")
         print(camera_matrix)
@@ -181,7 +179,7 @@ if __name__ == "__main__":
         P = np.array([x, y, z, 1]).T
 
         # assuming undistorted camera
-        p = translation_2d @ camera_matrix @ shear_2d @ translation_3d @ rotation_3d @ P
+        p = camera_matrix @ translation_3d @ rotation_3d @ P
 
         print("\nprojected sun position in image plane:", p)
 
