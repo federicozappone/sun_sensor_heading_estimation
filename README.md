@@ -21,7 +21,7 @@ Acquire frames of the chessboard using the ```grab_calibration_frames.py``` util
 
 Finally, run ```calibrate_camera.py```, if everything goes well you should have a ```calibration.npz``` file inside the ```calibration_data``` folder.
 
-You can now run the sun sensor script (before doing that set your correct location (lat, lon) inside the script):
+You can now run the sun sensor script (before doing that set your correct location (lat, lon) inside ```configs/config.yaml``` file):
 
 ```
 python sun_sensor.py

@@ -3,6 +3,7 @@ import datetime
 import time
 import math
 import cv2
+import yaml
 
 from scipy.spatial.transform import Rotation
 from image_utils import image_resize
@@ -110,10 +111,16 @@ def detect_sun_position(frame, camera_matrix, dist_coefs):
 
 if __name__ == "__main__":
 
+    parameters = yaml.load(open("configs/config.yaml", "r"), Loader=yaml.FullLoader)
+
     # acquire frames from the system camera with id 0
     cap = cv2.VideoCapture(0)
 
-    location = (41.4622884, 12.8663671) # lat, lon
+    if not cap.isOpened():
+        print("cannot open camera")
+        exit()
+
+    location = (parameters["location"]["lat"], parameters["location"]["lon"]) # lat, lon
 
     try:
         with np.load("calibration_data/calibration.npz") as X:
@@ -122,7 +129,7 @@ if __name__ == "__main__":
                                                                     "tvecs", "w", "h", "pattern_size", "rms")]
     except FileNotFoundError:
         print("couldn't find calibration data")
-        exit(0)
+        exit()
 
 
     while True:
