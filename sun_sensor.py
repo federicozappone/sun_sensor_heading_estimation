@@ -145,9 +145,9 @@ if __name__ == "__main__":
         offset = offset / 60 / 60 * -1
 
         when = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, offset)
-        # Get the Sun's apparent location in the sky
+        # get the Sun's apparent location in the sky
         azimuth, elevation = sun_position(when, location, True)
-        # Output the results
+        # output the results
         print("\ndate time:", when)
         print("location:", location)
 
