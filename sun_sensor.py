@@ -155,7 +155,10 @@ if __name__ == "__main__":
         print("azimuth:", azimuth)
         print("elevation:", elevation)
 
-        sun_distance = 150 * 1e9 # meters
+        day_of_the_year = datetime.datetime.now().timetuple().tm_yday
+        au = 149597870700 # meters
+        sun_distance = 1.0 - 0.01672 * math.cos(((2 * math.pi) / 365.256363) * (day_of_the_year - 4))
+        sun_distance *= au
 
         x, y, z = spherical_to_cartesian(sun_distance, math.radians(elevation), math.radians(azimuth))
 
