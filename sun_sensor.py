@@ -74,8 +74,14 @@ def sun_position(when, location, refraction):
         targ = math.radians((elevation + (10.3 / (elevation + 5.11))))
         elevation += (1.02 / math.tan(targ)) / 60
 
+    # compute sun distance for a given day of the year
+    day_of_the_year = datetime.datetime.now().timetuple().tm_yday # day from january 1
+    au = 149597870700 # meters
+    distance = 1.0 - 0.01672 * math.cos(((2 * math.pi) / 365.256363) * (day_of_the_year - 4))
+    distance *= au
+
     # return azimuth and elevation in degrees
-    return (round(azimuth, 2), round(elevation, 2))
+    return (round(distance, 2), round(azimuth, 2), round(elevation, 2))
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -146,21 +152,17 @@ if __name__ == "__main__":
 
         when = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, offset)
         # get the Sun's apparent location in the sky
-        azimuth, elevation = sun_position(when, location, True)
+        distance, azimuth, elevation = sun_position(when, location, True)
         # output the results
         print("\ndate time:", when)
         print("location:", location)
 
         print("\nsun spherical coordinates")
+        print("distance:", distance)
         print("azimuth:", azimuth)
         print("elevation:", elevation)
 
-        day_of_the_year = datetime.datetime.now().timetuple().tm_yday # day from january 1
-        au = 149597870700 # meters
-        sun_distance = 1.0 - 0.01672 * math.cos(((2 * math.pi) / 365.256363) * (day_of_the_year - 4))
-        sun_distance *= au
-
-        x, y, z = spherical_to_cartesian(sun_distance, math.radians(elevation), math.radians(azimuth))
+        x, y, z = spherical_to_cartesian(distance, math.radians(elevation), math.radians(azimuth))
 
         z = abs(z)
 
