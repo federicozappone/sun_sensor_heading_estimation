@@ -155,7 +155,7 @@ if __name__ == "__main__":
         print("azimuth:", azimuth)
         print("elevation:", elevation)
 
-        day_of_the_year = datetime.datetime.now().timetuple().tm_yday
+        day_of_the_year = datetime.datetime.now().timetuple().tm_yday # day from january 1
         au = 149597870700 # meters
         sun_distance = 1.0 - 0.01672 * math.cos(((2 * math.pi) / 365.256363) * (day_of_the_year - 4))
         sun_distance *= au
