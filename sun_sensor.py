@@ -234,4 +234,4 @@ if __name__ == "__main__":
 
         cv2.imshow("camera frame", frame)
         cv2.imshow("debug image", debug_image)
-        cv2.waitKey(500)
+        cv2.waitKey(100)
