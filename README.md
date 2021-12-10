@@ -1,4 +1,4 @@
-# Heading Estimation Using Sun Sensor
+# Absolute Heading Estimation Using Sun Sensor
 
 ![image](images/camera.jpg)
 
