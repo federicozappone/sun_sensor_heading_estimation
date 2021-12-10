@@ -1,3 +1,7 @@
+# Heading Estimation Using Sun Sensor
+
+![image](images/camera.jpg)
+
 ## Table of contents
 
 - [Quick start](#quick-start)
