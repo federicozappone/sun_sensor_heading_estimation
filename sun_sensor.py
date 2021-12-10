@@ -203,7 +203,7 @@ if __name__ == "__main__":
         v_est = int(p[1])
 
 
-        if u_est > w or v_est > h:
+        if u_est > w or v_est > h or u_est < 0 or v_est < 0:
             print("sun projection outside of image plane")
             continue
 
