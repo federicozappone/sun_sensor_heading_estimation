@@ -94,9 +94,6 @@ rms, _, _, _, _ = \
 print("Valid images:", valid)
 print("image shape:", img_shape[::-1])
 
-print("K:", K.tolist())
-print("D:", D.tolist())
-
 center = np.zeros(3)
 rotation_mat = compute_rotation_matrix(0, 0, 0)
 
@@ -112,5 +109,10 @@ Vn = rotation_mat[1, :] - C
 
 H = fx * Hn + cx * A
 V = fy * Vn + cy * A
+
+print("C:", C)
+print("A:", A)
+print("H:", H)
+print("V:", V)
 
 np.savez("calibration_data/calibration.npz", C=C, A=A, H=H, V=V, D=D)
