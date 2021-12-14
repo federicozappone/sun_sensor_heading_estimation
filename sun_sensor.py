@@ -89,13 +89,26 @@ def rot_matrix_from_roll_pitch(roll, pitch):
 
 
 def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0, pitch=0.0, ax=0, ay=0, az=0, static=True):
+    # this step requires u, v, to be undistorted coordinates
+    fx = camera_matrix.item((0, 0))
+    fy = camera_matrix.item((1, 1))
+    cx = camera_matrix.item((0, 2))
+    cy = camera_matrix.item((1, 2))
+    
+    S = np.ones(3)
+    
+    # 3d ray from projection to sun
+    S[0] = (u - cx) / fx
+    S[1] = (v - cy) / fy
+    
+    """
     camera_matrix_inverse = camera_matrix.I
-
-    S = np.asarray(camera_matrix_inverse @ uv.T) # 3d ray from projection to sun
-    S = S / np.linalg.norm(S) # normalize
+    S = np.asarray(camera_matrix_inverse @ uv.T)
+    """
+    
+    S = /= np.linalg.norm(S) # normalize
 
     print("S:\n", S)
-
 
     S_rover = np.matrix([[0, 0, 1], [-1, 0, 0], [0, -1, 0]]) @ S # transform to rover frame
 
@@ -119,7 +132,6 @@ def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0,
 
     print("azimuth_site:", azimuth_site)
     print("elevation_site:", elevation_site)
-
 
     rover_heading = azimuth_astron - azimuth_site if azimuth_astron > azimuth_site else azimuth_site - azimuth_astron
 
