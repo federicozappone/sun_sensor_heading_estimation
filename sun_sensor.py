@@ -102,13 +102,13 @@ def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0,
     print("S_rover:\n", S_rover)
 
     if static is True:
-        T = rot_matrix_from_roll_pitch(roll, pitch)
+        T = rot_matrix_from_roll_pitch(roll, pitch).T
     else:
         T = rot_matrix_from_imu(ax, ay, az)
 
-    print("T (roll-pitch):\n", T)
+    print("T:\n", T)
 
-    S_site = T.T @ S_rover
+    S_site = T @ S_rover
 
     print("S_site:\n", S_site)
 
