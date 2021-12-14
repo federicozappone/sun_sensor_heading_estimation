@@ -9,13 +9,6 @@ from scipy.spatial.transform import Rotation
 from image_utils import image_resize
 
 
-def spherical_to_cartesian(r, elevation, azimuth):
-    x = r * math.sin(elevation) * math.cos(azimuth)
-    y = r * math.sin(elevation) * math.sin(azimuth)
-    z = r * math.cos(elevation)
-    return x, y, z
-
-
 def into_range(x, range_min, range_max):
     shiftedx = x - range_min
     delta = range_max - range_min
@@ -74,26 +67,50 @@ def sun_position(when, location, refraction):
         targ = math.radians((elevation + (10.3 / (elevation + 5.11))))
         elevation += (1.02 / math.tan(targ)) / 60
 
-    # compute sun distance for a given day of the year
-    day_of_the_year = datetime.datetime.now().timetuple().tm_yday # day from january 1
-    au = 149597870700 # meters
-    distance = 1.0 - 0.01672 * math.cos(((2 * math.pi) / 365.256363) * (day_of_the_year - 4))
-    distance *= au
-
     # return azimuth and elevation in degrees
-    return (round(distance, 2), round(azimuth, 2), round(elevation, 2))
+    return (round(distance, 2), round(azimuth, 2))
 
 
-def rotation_matrix_from_vectors(vec1, vec2):
-    a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
-    v = np.cross(a, b)
-    c = np.dot(a, b)
-    s = np.linalg.norm(v)
+def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0, pitch=0.0):
+    camera_matrix_inverse = camera_matrix.I
 
-    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
+    S = np.asarray(camera_matrix_inverse @ uv.T) # 3d ray from projection to sun
+    S = S / np.linalg.norm(S) # normalize
 
-    return rotation_matrix
+    print("S:\n", S)
+
+
+    S_rover = np.matrix([[0, 0, 1], [-1, 0, 0], [0, -1, 0]]) @ S # transform to rover frame
+
+    print("S_rover:\n", S_rover)
+
+    # account for pitch (theta), roll (phi)
+    T = np.matrix([[math.cos(pitch), 0, -math.sin(pitch)], 
+                   [math.sin(roll) * math.sin(pitch), math.cos(roll), math.sin(roll) * math.cos(pitch)], 
+                   [math.cos(roll) * math.sin(pitch), -math.sin(roll), math.cos(roll) * math.cos(pitch)]])
+
+
+    print("T (roll-pitch):\n", T)
+
+    S_site = T.T @ S_rover
+
+    print("S_site:\n", S_site)
+
+    # compute ray azimuth and elevation
+
+    azimuth_site = math.atan2(S_site[0], S_site[1])
+    elevation_site = math.asin(S_site[2])
+
+    print("azimuth_site:", azimuth_site)
+    print("elevation_site:", elevation_site)
+
+
+    rover_heading = azimuth_astron - azimuth_site if azimuth_astron > azimuth_site else azimuth_site - azimuth_astron
+
+
+    print("rover heading:", math.degrees(rover_heading))
+
+    return rover_heading
 
 
 # preliminary detection method, still not properly tested
@@ -151,92 +168,34 @@ if __name__ == "__main__":
         offset = offset / 60 / 60 * -1
 
         when = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, offset)
-        # get the Sun's apparent location in the sky
-        distance, azimuth, elevation = sun_position(when, location, True)
+
+        # get the sun's apparent location in the sky
+        azimuth, elevation = sun_position(when, location, True)
+
         # output the results
-        print("\ndate time:", when)
+        print("\ndate time:", dt)
         print("location:", location)
 
         print("\nsun spherical coordinates")
-        print("distance:", distance)
         print("azimuth:", azimuth)
         print("elevation:", elevation)
-
-        x, y, z = spherical_to_cartesian(distance, math.radians(elevation), math.radians(azimuth))
-
-        z = abs(z)
-
-        print("\nsun cartesian coordinates")
-        print("x:", x)
-        print("y:", y)
-        print("z:", z)
-
-        debug_image = np.zeros((h, w, 3), dtype=np.uint8)
-
-        I = np.eye(3)
-        t = np.zeros(3)
-        R = Rotation.from_euler("y", 90, degrees=True) # camera pointing up
 
         print("\ncamera matrix")
         print(camera_matrix)
 
-        translation_3d = np.c_[I, t]
-        rotation_3d = np.c_[np.r_[R.as_matrix(), [np.zeros(3)]], [0, 0, 0, 1]]
+        sun_centroid = detect_sun_position(frame, camera_matrix, dist_coefs) # sun centroid
 
-        print("\ncamera 3d translation")
-        print(translation_3d)
-        print("camera 3d rotation")
-        print(rotation_3d)
+        if sun_centroid is not None:
+            u, v = sun_centroid
 
-        P = np.array([x, y, z, 1]).T
+            # plot detected sun position on the camera frame
+            cv2.circle(frame, (u, v), 8, (255, 0, 0), 1)
 
-        # assuming undistorted camera
-        p = camera_matrix @ translation_3d @ rotation_3d @ P
+            # compute rover heading (assume roll = pitch = 0)
+            rover_heading = sun_centroid_to_rover_heading(u, v, math.radians(azimuth), camera_matrix)
 
-        print("\nprojected sun position in image plane:", p)
-
-        p /= p[2]
-
-        print("\nprojected sun position in image plane (normalized):", p)
-
-        u_est = int(p[0])
-        v_est = int(p[1])
-
-
-        if u_est > w or v_est > h or u_est < 0 or v_est < 0:
-            print("sun projection outside of image plane")
-            continue
-
-
-        u_real, v_real = detect_sun_position(frame, camera_matrix, dist_coefs)
-
-        # plot estimated sun position on debug image
-        cv2.circle(debug_image, (u_est, v_est), 4, (255, 255, 255), -1)
-        cv2.line(debug_image, (w // 2, h // 2), (u_est, v_est), (255, 255, 255), 1)
-
-        # plot detected sun position on debug image
-        cv2.circle(debug_image, (u_real, v_real), 4, (0, 255, 0), -1)
-        cv2.line(debug_image, (w // 2, h // 2), (u_real, v_real), (0, 255, 0), 1)
-
-        # plot detected sun position on the camera frame
-        cv2.circle(frame, (u_real, v_real), 8, (255, 0, 0), 1)
-
-        # compute rotation matrix from one vector to another
-        rot = rotation_matrix_from_vectors([u_est, v_est, 0], [u_real, v_real, 0])
-        
-        rot = Rotation.from_matrix(rot)
-
-        print("\ncamera estimated rotation matrix")
-        print(rot.as_matrix())
-
-        print("camera estimated rotation vector")
-        print(rot.as_rotvec())
-
-        camera_heading = azimuth + math.degrees(rot.as_rotvec()[2])
-
-        print("\ncamera heading (deg):", camera_heading)
+            print("\nrover heading (deg):", math.degrees(rover_heading))
 
 
         cv2.imshow("camera frame", frame)
-        cv2.imshow("debug image", debug_image)
-        cv2.waitKey(100)
+        cv2.waitKey(10)

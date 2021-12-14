@@ -25,7 +25,9 @@ Acquire frames of the chessboard using the ```grab_calibration_frames.py``` util
 
 Finally, run ```calibrate_camera.py```, if everything goes well you should have a ```calibration.npz``` file inside the ```calibration_data``` folder.
 
-You can now run the sun sensor script (before doing that set your correct location (lat, lon) inside ```configs/config.yaml``` file):
+Set your correct location (lat, lon) inside the ```configs/config.yaml``` file.
+
+You can now run the sun sensor script:
 
 ```
 python sun_sensor.py
@@ -35,9 +37,10 @@ python sun_sensor.py
 
 This program has been tested using a Raspberry PI 4 and a camera module with fisheye lens.
 
-We use the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
+I used the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
 
-We assume a "static" camera looking upward, if you wish to use this in a real world application (e.g. a rover) you need to update the camera orientation for every frame.
+The program assumes a "static" camera looking upward. 
+If you wish to use this in a real world application (e.g. a rover) you need to update the roll and pitch for every frame using an AHRS.
 
 The system could be augmented with a GPS sensor to acquire the current location in real time.
 
