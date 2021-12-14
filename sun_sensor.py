@@ -171,10 +171,10 @@ if __name__ == "__main__":
     location = (parameters["location"]["lat"], parameters["location"]["lon"]) # lat, lon
 
     try:
-        with np.load("calibration_data/calibration.npz") as X:
-            camera_matrix, dist_coefs, \
-            rvecs, tvecs, w, h, pattern_size, rms = [X[i] for i in ("camera_matrix", "dist_coefs", "rvecs", 
-                                                                    "tvecs", "w", "h", "pattern_size", "rms")]
+        with np.load("calibration_data/calibration.npz") as calibration:
+            camera_matrix = calibration["K"]
+            dist_coefs = calibration["D"]
+            
     except FileNotFoundError:
         print("couldn't find calibration data")
         exit()
