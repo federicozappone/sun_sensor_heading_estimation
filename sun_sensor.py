@@ -123,9 +123,6 @@ def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0,
 
     rover_heading = azimuth_astron - azimuth_site if azimuth_astron > azimuth_site else azimuth_site - azimuth_astron
 
-
-    print("rover heading:", math.degrees(rover_heading))
-
     return rover_heading
 
 
