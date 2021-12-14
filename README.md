@@ -33,17 +33,6 @@ You can now run the sun sensor script:
 python sun_sensor.py
 ```
 
-## Notes
-
-This program has been tested using a Raspberry PI 4 and a camera module with fisheye lens.
-
-I used the standard VideoCapture from OpenCV which supports most USB and RPI cameras.
-
-The program assumes a "static" camera looking upward. 
-If you wish to use this in a real world application (e.g. a rover) you need to update the roll and pitch for every frame using an AHRS.
-
-The system could be augmented with a GPS sensor to acquire the current location in real time.
-
 ## Creators
 
 **Federico Zappone**

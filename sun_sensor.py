@@ -71,7 +71,24 @@ def sun_position(when, location, refraction):
     return (round(distance, 2), round(azimuth, 2))
 
 
-def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0, pitch=0.0):
+def rot_matrix_from_imu(ax, ay, az):
+    v = math.sqrt(1 - ax**2)
+
+    G = np.matrix([[v, -(ay * ax) / v, -(az * ax) / v], 
+                   [0, az / v, -ay / v], 
+                   [ax, ay, az]])
+
+    return G
+
+def rot_matrix_from_roll_pitch(roll, pitch):
+    T = np.matrix([[math.cos(pitch), 0, -math.sin(pitch)], 
+                   [math.sin(roll) * math.sin(pitch), math.cos(roll), math.sin(roll) * math.cos(pitch)], 
+                   [math.cos(roll) * math.sin(pitch), -math.sin(roll), math.cos(roll) * math.cos(pitch)]])
+
+    return T
+
+
+def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0, pitch=0.0, ax=0, ay=0, az=0, static=True):
     camera_matrix_inverse = camera_matrix.I
 
     S = np.asarray(camera_matrix_inverse @ uv.T) # 3d ray from projection to sun
@@ -84,11 +101,10 @@ def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0,
 
     print("S_rover:\n", S_rover)
 
-    # account for pitch (theta), roll (phi)
-    T = np.matrix([[math.cos(pitch), 0, -math.sin(pitch)], 
-                   [math.sin(roll) * math.sin(pitch), math.cos(roll), math.sin(roll) * math.cos(pitch)], 
-                   [math.cos(roll) * math.sin(pitch), -math.sin(roll), math.cos(roll) * math.cos(pitch)]])
-
+    if static is True:
+        T = rot_matrix_from_roll_pitch(roll, pitch)
+    else:
+        T = rot_matrix_from_imu(ax, ay, az)
 
     print("T (roll-pitch):\n", T)
 
@@ -154,6 +170,9 @@ if __name__ == "__main__":
         print("couldn't find calibration data")
         exit()
 
+    print("\ncamera matrix")
+    print(camera_matrix)
+
 
     while True:
         ret, frame = cap.read()
@@ -180,8 +199,9 @@ if __name__ == "__main__":
         print("azimuth:", azimuth)
         print("elevation:", elevation)
 
-        print("\ncamera matrix")
-        print(camera_matrix)
+        if elevation < 0:
+            print("elevation < 0, sun not visible")
+            continue
 
         sun_centroid = detect_sun_position(frame, camera_matrix, dist_coefs) # sun centroid
 
@@ -195,6 +215,8 @@ if __name__ == "__main__":
             rover_heading = sun_centroid_to_rover_heading(u, v, math.radians(azimuth), camera_matrix)
 
             print("\nrover heading (deg):", math.degrees(rover_heading))
+        else:
+            print("\ncouldn't find sun centroid")
 
 
         cv2.imshow("camera frame", frame)
