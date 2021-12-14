@@ -71,6 +71,15 @@ def sun_position(when, location, refraction):
     return (round(distance, 2), round(azimuth, 2))
 
 
+def pixel_to_ray(u, v, C, A, H, V)
+    vec = np.cross(V - v * A, H - u * A)
+    vec /= np.linalg.norm(vec)
+
+    if np.dot(np.cross(V, H), A) < 0.0:
+        vec *= -1.0
+
+    return vec
+
 def rot_matrix_from_imu(ax, ay, az):
     v = math.sqrt(1 - ax**2)
 
@@ -88,25 +97,8 @@ def rot_matrix_from_roll_pitch(roll, pitch):
     return T
 
 
-def sun_centroid_to_rover_heading(u, v, azimuth_astron, camera_matrix, roll=0.0, pitch=0.0, ax=0, ay=0, az=0, static=True):
-    # this step requires u, v, to be undistorted coordinates
-    fx = camera_matrix.item((0, 0))
-    fy = camera_matrix.item((1, 1))
-    cx = camera_matrix.item((0, 2))
-    cy = camera_matrix.item((1, 2))
-    
-    S = np.ones(3)
-    
-    # 3d ray from projection to sun
-    S[0] = (u - cx) / fx
-    S[1] = (v - cy) / fy
-    
-    """
-    camera_matrix_inverse = camera_matrix.I
-    S = np.asarray(camera_matrix_inverse @ uv.T)
-    """
-    
-    S = /= np.linalg.norm(S) # normalize
+def sun_centroid_to_rover_heading(u, v, azimuth_astron, C, A, H, V, roll=0.0, pitch=0.0, ax=0, ay=0, az=0, static=True):
+    S = pixel_to_ray(u, v, C, A, H, V)
 
     print("S:\n", S)
 
@@ -172,8 +164,11 @@ if __name__ == "__main__":
 
     try:
         with np.load("calibration_data/calibration.npz") as calibration:
-            camera_matrix = calibration["K"]
-            dist_coefs = calibration["D"]
+            C = calibration["C"]
+            A = calibration["A"]
+            H = calibration["H"]
+            V = calibration["V"]
+            D = calibration["D"]
             
     except FileNotFoundError:
         print("couldn't find calibration data")
@@ -212,7 +207,7 @@ if __name__ == "__main__":
             print("elevation < 0, sun not visible")
             continue
 
-        sun_centroid = detect_sun_position(frame, camera_matrix, dist_coefs) # sun centroid
+        sun_centroid = detect_sun_position(frame, camera_matrix, D) # sun centroid
 
         if sun_centroid is not None:
             u, v = sun_centroid
