@@ -23,6 +23,7 @@ while True:
     if key == ord("s"):
         filename = "calibration_data/calibration_frames/frame_" + str(file_index) + str(time.time()) + ".png"
         cv2.imwrite(filename, frame)
+        print(f"saved frame: {filename}")
         file_index += 1
 
 cv2.destroyAllWindows()
