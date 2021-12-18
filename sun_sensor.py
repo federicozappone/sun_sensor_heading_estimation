@@ -216,7 +216,7 @@ if __name__ == "__main__":
             cv2.circle(frame, (u, v), 8, (255, 0, 0), 1)
 
             # compute rover heading (assume roll = pitch = 0)
-            rover_heading = sun_centroid_to_rover_heading(u, v, math.radians(azimuth), camera_matrix)
+            rover_heading = sun_centroid_to_rover_heading(u, v, math.radians(azimuth), C, A, H, V)
 
             print("\nrover heading (deg):", math.degrees(rover_heading))
         else:
